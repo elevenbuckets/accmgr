@@ -170,5 +170,5 @@ class AccountsManager
 	}
 }
 
-module.exports = AccountManager;
+module.exports = AccountsManager;
 
