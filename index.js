@@ -127,19 +127,17 @@ class AccountsManager
 	create = (password) => 
 	{
 	    const __creates = (resolve, reject) => {
-		keth.create(null, function (dk) {
-	    	    keth.dump(password, dk.privateKey, dk.salt, dk.iv, {kdf: 'scrypt'}, function(keyObj) 
-	    	    {
-			if (keyObj.error) return reject("Key creation failed: " + keyObj.error);
+		let dk = keth.create();
+	    	let keyObj = keth.dump(password, dk.privateKey, dk.salt, dk.iv, {kdf: 'scrypt'});
+
+		if (keyObj.error) return reject("Key creation failed: " + keyObj.error);
 	
-			keth.exportToFile(keyObj, path.join(this.datadir, 'keystore'), (path) => 
-	               	{
-				if (!fs.existsSync(path)) return reject(path);
-				console.log("Create keyfile at " + path);
-			        resolve({address: keyObj.address, password});
-	               	});
-	    	    })
-		});
+		let p = keth.exportToFile(keyObj, path.join(this.datadir, 'keystore'));
+		console.log("Create keyfile at " + p);
+
+		if (!fs.existsSync(p)) return reject(p);
+
+	        resolve({address: keyObj.address, password});
 	    };
 	
 	    return new Promise( __creates );
