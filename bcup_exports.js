@@ -41,24 +41,26 @@ creates(datadir, 'dc384ZU@b9lab')
 .catch( (err) => { console.log(err); process.exit(1); });
 */
 
-let masterpw = 'masterpass';
+const newAccount = (masterpw, datadir, password) => {
+    return creates(datadir, password)
+    .then( (result) => 
+    {
+    	return ds.load(createCredentials.fromPassword(masterpw)).then( (myArchive) => 
+    	{
+    		let vaults = myArchive.findGroupsByTitle("ElevenBuckets")[0];
+    		vaults.createEntry(result.address)
+    		        .setProperty("username", result.address)
+    		        .setProperty("password", result.password);
+    
+    		return myArchive;
+    	})
+    	.then( (myArchive) => 
+    	{
+    		return ds.save(myArchive, createCredentials.fromPassword(masterpw));
+    	})
+    })
+}
 
-creates(datadir, 'dc384ZU@b9lab')
-.then( (result) => 
-{
-	return ds.load(createCredentials.fromPassword(masterpw)).then( (myArchive) => 
-	{
-		let vaults = myArchive.findGroupsByTitle("ElevenBuckets")[0];
-		vaults.createEntry(result.address)
-		        .setProperty("username", result.address)
-		        .setProperty("password", result.password);
-
-		return myArchive;
-	})
-	.then( (myArchive) => 
-	{
-		return ds.save(myArchive, createCredentials.fromPassword(masterpw));
-	})
-})
+newAccount('masterpass', datadir, 'dc384ZU@b9lab')
 .then( () => { console.log("Done update bcup archive!"); })
 .catch( (err) => { console.log(err); process.exit(1); });
