@@ -14,7 +14,7 @@ class AccountsManager
 	{
 		let buffer = fs.readFileSync(path.join(cfdir, 'config.json'));
 		this.config = JSON.parse(buffer.toString());
-		this.datadir = config.datadir || path.join(os.homedir(), '.ethereum');
+		this.datadir = this.config.datadir || path.join(os.homedir(), '.ethereum');
 	}
 
 	recover = (address, password) => 
