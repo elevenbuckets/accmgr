@@ -87,6 +87,7 @@ class AccountsManager
 	        {
 	                if (!fs.existsSync(path)) return reject(path);
 	                console.log("Import keyfile to " + path);
+			fs.chmodSync(path, '600');
 	                resolve({address: keyObj.address, password});
 	        });
 	    }
@@ -142,6 +143,7 @@ class AccountsManager
 		console.log("Create keyfile at " + p);
 
 		if (!fs.existsSync(p)) return reject(p);
+		fs.chmodSync(p, '600');
 
 	        resolve({address: keyObj.address, password});
 	    };
