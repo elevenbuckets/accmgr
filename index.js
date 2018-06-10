@@ -6,7 +6,7 @@ const os = require('os');
 const fs = require('fs');
 const bcup  = require('buttercup');
 const { createCredentials, FileDatasource } = bcup;
-
+const masterpw = new WeakMap();
 
 class AccountsManager 
 {
@@ -15,7 +15,11 @@ class AccountsManager
 		let buffer = fs.readFileSync(path.join(cfdir, 'config.json'));
 		this.config = JSON.parse(buffer.toString());
 		this.datadir = this.config.datadir || path.join(os.homedir(), '.ethereum');
+
+		masterpw.set(this, {passwd: null});
 	}
+
+	password = (value) => { masterpw.get(this).passwd = value };
 
 	recover = (address, password) => 
 	{
@@ -43,7 +47,7 @@ class AccountsManager
 		return new Promise(__recovers);
 	}
 
-	newArchive = (masterpw) => 
+	newArchive = (masspw) => 
 	{
 		if (fs.existsSync(this.config.passVault)) return Promise.resolve();
 
@@ -51,7 +55,7 @@ class AccountsManager
 		let myGroup = myArchive.createGroup("ElevenBuckets");
 		let ds = new FileDatasource(this.config.passVault);
 
-		return ds.save(myArchive, createCredentials.fromPassword(masterpw));
+		return ds.save(myArchive, createCredentials.fromPassword(masspw));
 	}
 
 	importFromJSON = (jsonpath, password) => 
@@ -74,8 +78,10 @@ class AccountsManager
 	        return new Promise(__recovers);
 	}
 
-	update = (masterpw, keyObj, password) =>
+	update = (keyObj, password) =>
 	{
+	    let pw = masterpw.get(this).passwd;
+
 	    const __update = (resolve, reject) => {
 		keth.exportToFile(keyObj, path.join(this.datadir, 'keystore'), (path) =>
 	        {
@@ -85,7 +91,7 @@ class AccountsManager
 	        });
 	    }
 	
-	    let _stage = this.newArchive(masterpw)
+	    let _stage = this.newArchive(pw)
 	    .then( () => { return this.recover(keyObj.address, password); })
 	    .then( (r) => 
 	    { 
@@ -101,7 +107,7 @@ class AccountsManager
 	    {
 	    	   let ds = new FileDatasource(this.config.passVault);
 
-	           return ds.load(createCredentials.fromPassword(masterpw)).then( (myArchive) =>
+	           return ds.load(createCredentials.fromPassword(pw)).then( (myArchive) =>
 	           {
 	                  let vaults = myArchive.findGroupsByTitle("ElevenBuckets")[0];
 			  let oldEntries = vaults.findEntriesByProperty('username', results.address);
@@ -119,7 +125,7 @@ class AccountsManager
 	           })
 	           .then( (myArchive) =>
 	           {
-	                  return ds.save(myArchive, createCredentials.fromPassword(masterpw));
+	                  return ds.save(myArchive, createCredentials.fromPassword(pw));
 	           });
 	     });
 	}
@@ -143,15 +149,17 @@ class AccountsManager
 	    return new Promise( __creates );
 	}
 
-	newAccount = (masterpw, password) => 
+	newAccount = (password) => 
 	{
-	    return this.newArchive(masterpw)
+	    let pw = masterpw.get(this).passwd;
+
+	    return this.newArchive(pw)
 	    .then( () => { return this.create(password); })
 	    .then( (result) => 
 	    {
 	    	let ds = new FileDatasource(this.config.passVault);
 
-	    	return ds.load(createCredentials.fromPassword(masterpw)).then( (myArchive) => 
+	    	return ds.load(createCredentials.fromPassword(pw)).then( (myArchive) => 
 	    	{
 	    		let vaults = myArchive.findGroupsByTitle("ElevenBuckets")[0];
 	    		vaults.createEntry(result.address)
@@ -162,7 +170,7 @@ class AccountsManager
 	    	})
 	    	.then( (myArchive) => 
 	    	{
-	    		return ds.save(myArchive, createCredentials.fromPassword(masterpw));
+	    		return ds.save(myArchive, createCredentials.fromPassword(pw));
 	    	})
 	    })
 	}
