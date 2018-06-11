@@ -126,7 +126,7 @@ class AccountsManager
 	           })
 	           .then( (myArchive) =>
 	           {
-	                  return ds.save(myArchive, createCredentials.fromPassword(pw));
+	    		  return ds.save(myArchive, createCredentials.fromPassword(pw)).then( () => { return results.address; });
 	           });
 	     });
 	}
@@ -176,7 +176,7 @@ class AccountsManager
 	    	})
 	    	.then( (myArchive) => 
 	    	{
-	    		return ds.save(myArchive, createCredentials.fromPassword(pw));
+	    		return ds.save(myArchive, createCredentials.fromPassword(pw)).then( () => { return result.address; });
 	    	})
 	    })
 	}
