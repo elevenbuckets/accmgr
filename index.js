@@ -111,7 +111,7 @@ class AccountsManager
 	           return ds.load(createCredentials.fromPassword(pw)).then( (myArchive) =>
 	           {
 	                  let vaults = myArchive.findGroupsByTitle("ElevenBuckets")[0];
-			  let oldEntries = vaults.findEntriesByProperty('username', results.address);
+			  let oldEntries = vaults.findEntriesByProperty('username', '0x' + results.address);
 		
 			  if (oldEntries.length > 0 && oldEntries[0].getProperty('password') === results.password) {
 				  console.log("password entry exists, skipping ...");
@@ -119,14 +119,14 @@ class AccountsManager
 			  }
 	
 	                  vaults.createEntry(results.address)
-	                          .setProperty("username", results.address)
+	                          .setProperty("username", '0x' + results.address)
 	                          .setProperty("password", results.password);
 	
 	                  return myArchive;
 	           })
 	           .then( (myArchive) =>
 	           {
-	    		  return ds.save(myArchive, createCredentials.fromPassword(pw)).then( () => { return results.address; });
+	    		  return ds.save(myArchive, createCredentials.fromPassword(pw)).then( () => { return '0x' + results.address; });
 	           });
 	     });
 	}
@@ -169,14 +169,14 @@ class AccountsManager
 	    	{
 	    		let vaults = myArchive.findGroupsByTitle("ElevenBuckets")[0];
 	    		vaults.createEntry(result.address)
-	    		        .setProperty("username", result.address)
+	    		        .setProperty("username", '0x' + result.address)
 	    		        .setProperty("password", result.password);
 	    
 	    		return myArchive;
 	    	})
 	    	.then( (myArchive) => 
 	    	{
-	    		return ds.save(myArchive, createCredentials.fromPassword(pw)).then( () => { return result.address; });
+	    		return ds.save(myArchive, createCredentials.fromPassword(pw)).then( () => { return '0x' + result.address; });
 	    	})
 	    })
 	}
