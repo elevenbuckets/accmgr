@@ -3,9 +3,13 @@
   "version": "1.0.0",
   "description": "",
   "main": "Accounts.js",
+  "babel": {
+	  "presets": [["env", {"targets": {"node": "8.6"}}]],
+	  "plugins": ["transform-class-properties", "transform-object-rest-spread"]
+  },
   "scripts": {
      "postinstall": "npm run build",
-     "build": "./node_modules/.bin/babel --presets es2015 --plugins transform-class-properties,transform-object-rest-spread ./index.js -o ./Accounts.js"
+     "build": "./node_modules/.bin/babel ./index.js -o ./Accounts.js"
   },
   "keywords": [],
   "author": "",
