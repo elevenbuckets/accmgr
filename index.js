@@ -13,11 +13,11 @@ class AccountsManager
 	constructor(cfdir) 
 	{
                 const __watcher = (cfpath) => {
-                        console.log("No config found, watcher triggered ...");
+                        console.log("AccMgr: No config found, watcher triggered ...");
                         let cfgw = fs.watch(path.dirname(cfpath), (e, f) => {
                                 console.log(`CastIron::__watcher: got fsevent ${e} on ${f}`);
                                 if ((e === 'rename' || e === 'change') && f === path.basename(cfpath) && fs.existsSync(cfpath)) {
-                                        console.log("got config file, parsing ...");
+                                        console.log("AccMgr: got config file, parsing ...");
                                         let buffer = fs.readFileSync(cfpath);
                                         this.config = JSON.parse(buffer.toString());
                                 }
