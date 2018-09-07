@@ -12,6 +12,18 @@ class AccountsManager
 {
 	constructor(cfdir) 
 	{
+                const __watcher = (cfpath) => {
+                        console.log("No config found, watcher triggered ...");
+                        let cfgw = fs.watch(path.dirname(cfpath), (e, f) => {
+                                console.log(`CastIron::__watcher: got fsevent ${e} on ${f}`);
+                                if ((e === 'rename' || e === 'change') && f === path.basename(cfpath) && fs.existsSync(cfpath)) {
+                                        console.log("got config file, parsing ...");
+                                        let buffer = fs.readFileSync(cfpath);
+                                        this.config = JSON.parse(buffer.toString());
+                                }
+                        })
+                }
+
 		try {
 			let buffer = fs.readFileSync(path.join(cfdir, 'config.json'));
 			this.config = JSON.parse(buffer.toString());
@@ -20,6 +32,9 @@ class AccountsManager
 				datadir: path.join(os.homedir(), '.ethereum'),
 				passVault: '/dev/null'
 			};
+
+			let cfpath = path.join(cfdir, 'config.json');
+			__watcher(cfpath);			
 		}
 		this.datadir = this.config.datadir || path.join(os.homedir(), '.ethereum');
 
