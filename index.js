@@ -12,8 +12,15 @@ class AccountsManager
 {
 	constructor(cfdir) 
 	{
-		let buffer = fs.readFileSync(path.join(cfdir, 'config.json'));
-		this.config = JSON.parse(buffer.toString());
+		try {
+			let buffer = fs.readFileSync(path.join(cfdir, 'config.json'));
+			this.config = JSON.parse(buffer.toString());
+		} catch(err) {
+			this.config = {
+				datadir: path.join(os.homedir(), '.ethereum'),
+				passVault: '/dev/null'
+			};
+		}
 		this.datadir = this.config.datadir || path.join(os.homedir(), '.ethereum');
 
 		masterpw.set(this, {passwd: null});
