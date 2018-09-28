@@ -108,7 +108,7 @@ class AccountsManager
 		if (cluster.isMaster) {
 			const __recovers = (resolve, reject) =>
 	        	{
-				const worker = clister.fork({jsonpath, password}); // passing via env safer than IPC?
+				const worker = cluster.fork({jsonpath, password}); // passing via env safer than IPC?
 				worker.on('message', (keyObj) => { 
 					if (Object.keys(keyObj).length === 0) {
 						reject(false);
