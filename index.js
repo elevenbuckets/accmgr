@@ -7,6 +7,7 @@ const fs = require('fs');
 const bcup  = require('buttercup');
 const { createCredentials, FileDatasource } = bcup;
 const masterpw = new WeakMap();
+const cluster = require('cluster');
 
 class AccountsManager 
 {
@@ -80,6 +81,7 @@ class AccountsManager
 		return ds.save(myArchive, createCredentials.fromPassword(masspw));
 	}
 
+	/*
 	importFromJSON = (jsonpath, password) => 
 	{
 		let keybuf = fs.readFileSync(jsonpath);
@@ -98,6 +100,97 @@ class AccountsManager
 	        }
 	
 	        return new Promise(__recovers);
+	}
+	*/
+
+	importFromJSON = (jsonpath, password) => 
+	{
+		if (cluster.isMaster) {
+			const __recovers = (resolve, reject) =>
+	        	{
+				const worker = clister.fork({jsonpath, password}); // passing via env safer than IPC?
+				worker.on('message', (keyObj) => { 
+					if (Object.keys(keyObj).length === 0) {
+						reject(false);
+					} else {
+						resolve({keyObj, password});
+					}
+				});
+				worker.on('error', () => { reject(false); });
+	        	}
+
+	        	return new Promise(__recovers);
+		} else {
+			// Worker, an independent process NOT cloning current (parent) process memory
+			const fs = require('fs');
+			const keth = require('keythereum');
+
+			let password = process.env.password;
+			delete process.env.password;
+			let jsonpath = process.env.jsonpath;
+
+			let keybuf = fs.readFileSync(jsonpath);
+			let keyObj = JSON.parse(keybuf.toString());
+
+	                keth.recover(password, keyObj, function(pkey) {
+	                        if (pkey.toString() === 'Error: message authentication code mismatch') {
+					process.send({});
+				} else {
+					process.send(keyObj);
+				}
+
+				process.exit(0);
+	                });
+		}
+	}
+
+	create = (password) => 
+	{
+		if (cluster.isMaster) {
+	    		const __creates = (resolve, reject) => {
+				const worker = cluster.fork({password, datadir: this.datadir}); // passing via env safer than IPC?
+				worker.on('message', (Obj) => { 
+					if (Object.keys(Obj).length === 0) {
+						reject(false);
+					} else {
+						resolve({address: Obj.address, password});
+					}
+				});
+				worker.on('error', () => { reject(false); });
+	    		};
+
+	    		return new Promise( __creates );
+		} else {
+			// Worker, an independent process NOT cloning current (parent) process memory
+			const fs = require('fs');
+			const keth = require('keythereum');
+			const path = require('path');
+
+			let password = process.env.password;
+			delete process.env.password;
+			let datadir = process.env.datadir;
+
+			keth.create(keth.constants, (k) => { 
+				let dk = k;
+	    			let keyObj = keth.dump(password, dk.privateKey, dk.salt, dk.iv, {kdf: 'scrypt'});
+
+				if (keyObj.error) {
+					process.send({});
+					process.exit(0);
+				}
+	
+				let p = keth.exportToFile(keyObj, path.join(datadir, 'keystore'));
+
+				if (!fs.existsSync(p)) {
+					process.send({});
+					process.exit(0);
+				}
+
+				fs.chmodSync(p, '600');
+	        		process.send({address: keyObj.address});
+				process.exit(0);
+			});
+		}
 	}
 
 	update = (keyObj, password) =>
@@ -152,7 +245,7 @@ class AccountsManager
 	           });
 	     });
 	}
-
+/*
 	create = (password) => 
 	{
 	    const __creates = (resolve, reject) => {
@@ -176,7 +269,7 @@ class AccountsManager
 	
 	    return new Promise( __creates );
 	}
-
+*/
 	newAccount = (password) => 
 	{
 	    let pw = masterpw.get(this).passwd;
