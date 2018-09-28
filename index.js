@@ -81,30 +81,10 @@ class AccountsManager
 		return ds.save(myArchive, createCredentials.fromPassword(masspw));
 	}
 
-	/*
 	importFromJSON = (jsonpath, password) => 
 	{
-		let keybuf = fs.readFileSync(jsonpath);
-		let keyObj = JSON.parse(keybuf.toString());
-	
-		const __recovers = (resolve, reject) =>
-	        {
-	                console.log("Processing " + keyObj.address + " via file " + jsonpath);
-	                keth.recover(password, keyObj, function(pkey) {
-	                        if (pkey.toString() === 'Error: message authentication code mismatch') {
-	                                reject(false)
-	                        } else {
-	                                resolve({keyObj, password});
-	                        }
-	                });
-	        }
-	
-	        return new Promise(__recovers);
-	}
-	*/
+		cluster.setupMaster({exec: path.join(__dirname, './import.js')});
 
-	importFromJSON = (jsonpath, password) => 
-	{
 		if (cluster.isMaster) {
 			const __recovers = (resolve, reject) =>
 	        	{
@@ -120,32 +100,13 @@ class AccountsManager
 	        	}
 
 	        	return new Promise(__recovers);
-		} else {
-			// Worker, an independent process NOT cloning current (parent) process memory
-			const fs = require('fs');
-			const keth = require('keythereum');
-
-			let password = process.env.password;
-			delete process.env.password;
-			let jsonpath = process.env.jsonpath;
-
-			let keybuf = fs.readFileSync(jsonpath);
-			let keyObj = JSON.parse(keybuf.toString());
-
-	                keth.recover(password, keyObj, function(pkey) {
-	                        if (pkey.toString() === 'Error: message authentication code mismatch') {
-					process.send({});
-				} else {
-					process.send(keyObj);
-				}
-
-				process.exit(0);
-	                });
 		}
 	}
 
 	create = (password) => 
 	{
+		cluster.setupMaster({exec: path.join(__dirname, './create.js')});
+
 		if (cluster.isMaster) {
 	    		const __creates = (resolve, reject) => {
 				const worker = cluster.fork({password, datadir: this.datadir}); // passing via env safer than IPC?
@@ -160,36 +121,6 @@ class AccountsManager
 	    		};
 
 	    		return new Promise( __creates );
-		} else {
-			// Worker, an independent process NOT cloning current (parent) process memory
-			const fs = require('fs');
-			const keth = require('keythereum');
-			const path = require('path');
-
-			let password = process.env.password;
-			delete process.env.password;
-			let datadir = process.env.datadir;
-
-			keth.create(keth.constants, (k) => { 
-				let dk = k;
-	    			let keyObj = keth.dump(password, dk.privateKey, dk.salt, dk.iv, {kdf: 'scrypt'});
-
-				if (keyObj.error) {
-					process.send({});
-					process.exit(0);
-				}
-	
-				let p = keth.exportToFile(keyObj, path.join(datadir, 'keystore'));
-
-				if (!fs.existsSync(p)) {
-					process.send({});
-					process.exit(0);
-				}
-
-				fs.chmodSync(p, '600');
-	        		process.send({address: keyObj.address});
-				process.exit(0);
-			});
 		}
 	}
 
@@ -245,31 +176,7 @@ class AccountsManager
 	           });
 	     });
 	}
-/*
-	create = (password) => 
-	{
-	    const __creates = (resolve, reject) => {
 
-		keth.create(keth.constants, (k) => { 
-			let dk = k;
-	    		let keyObj = keth.dump(password, dk.privateKey, dk.salt, dk.iv, {kdf: 'scrypt'});
-
-			if (keyObj.error) return reject("Key creation failed: " + keyObj.error);
-	
-			let p = keth.exportToFile(keyObj, path.join(this.datadir, 'keystore'));
-			console.log("Create keyfile at " + p);
-
-			if (!fs.existsSync(p)) return reject(p);
-			fs.chmodSync(p, '600');
-
-	        	resolve({address: keyObj.address, password});
-		});
-
-	    };
-	
-	    return new Promise( __creates );
-	}
-*/
 	newAccount = (password) => 
 	{
 	    let pw = masterpw.get(this).passwd;
