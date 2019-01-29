@@ -4,12 +4,24 @@
   "description": "",
   "main": "Accounts.js",
   "babel": {
-	  "presets": [["env", {"targets": {"node": "8.6"}}]],
-	  "plugins": ["transform-class-properties", "transform-object-rest-spread"]
+    "presets": [
+      [
+        "env",
+        {
+          "targets": {
+            "node": "8.6"
+          }
+        }
+      ]
+    ],
+    "plugins": [
+      "transform-class-properties",
+      "transform-object-rest-spread"
+    ]
   },
   "scripts": {
-     "postinstall": "npm run build",
-     "build": "./node_modules/.bin/babel ./index.js -o ./Accounts.js"
+    "postinstall": "npm run build",
+    "build": "./node_modules/.bin/babel ./index.js -o ./Accounts.js"
   },
   "keywords": [],
   "author": "",
