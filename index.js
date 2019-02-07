@@ -29,6 +29,7 @@ class AccountsManager
 			let buffer = fs.readFileSync(path.join(cfdir, 'config.json'));
 			this.config = JSON.parse(buffer.toString());
 		} catch(err) {
+			console.trace(err);
 			this.config = {
 				datadir: path.join(os.homedir(), '.ethereum'),
 				passVault: '/dev/null'
