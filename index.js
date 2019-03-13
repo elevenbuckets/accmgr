@@ -71,6 +71,31 @@ class AccountsManager
 		return new Promise(__recovers);
 	}
 
+	unlock = (address, password) => 
+	{
+		let keyObj;
+	
+		try {
+			keyObj = keth.importFromFile(address, this.datadir);
+		} catch (err) {
+			return Promise.reject(false);
+		}
+	
+		const __recovers = (resolve, reject) => 
+		{
+			console.log("Processing " + address);
+		        keth.recover(password, keyObj, function(pkey) { 
+				if (pkey.toString() === 'Error: message authentication code mismatch') {
+					reject(false)
+				} else {
+					resolve({address, pkey});
+				}
+			});
+		}
+	
+		return new Promise(__recovers);
+	}
+
 	newArchive = (masspw) => 
 	{
 		if (fs.existsSync(this.config.passVault)) return Promise.resolve();
